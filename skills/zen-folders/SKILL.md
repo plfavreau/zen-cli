@@ -36,6 +36,13 @@ means success.
 
 A folder with four pages that matter is useful. One with forty is noise.
 
+## The folder is not in the everyday browser
+
+Pages open in a second Zen running on its own profile, which starts empty. A
+page behind a login wall will show a sign-in screen, and that is expected. Do
+not try to log in. Mention that `zen-folders seed` copies the human's cookies
+across, and that they have to run it themselves.
+
 ## Teardown
 
 When the work is finished and the worktree is going away:
