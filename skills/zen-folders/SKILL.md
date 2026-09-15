@@ -1,47 +1,50 @@
 ---
 name: zen-folders
-description: Keep the pages you are working from in a Zen Browser folder tied to the current git worktree, so the human can see and reuse your browsing. Use when you consult documentation, open a pull request, read a ticket, or land on a page the human will want after you stop. Triggers on "open this in my browser", "put that in my Zen folder", "show me the docs you used".
+description: Keep the pages behind a coding session in a Zen browser folder, so the human can see what you read and what you built. Use when a page is worth keeping - the PR you opened, the ticket you are implementing, documentation that drove a decision, a dashboard the human will want to check. Triggers on "open this in my browser", "put that in my Zen folder", "show me the docs you used", and on opening a PR.
 ---
 
 # zen-folders
 
-Every git worktree gets one Zen folder. You act on the folder for the worktree you
-are standing in — there is no way to name another one, and no reason to ask which.
+Every worktree gets one folder in the human's browser, named after the branch.
+You cannot name another one and there is no reason to ask which — there is only
+yours.
 
 ## Commands
 
-```
-zen-folders open <url> [<url>...]   # open urls in this worktree's folder
-zen-folders list                    # url and title, one tab per line
-zen-folders close <url|index>       # drop tabs
-zen-folders destroy                 # remove the folder and its tabs
+```bash
+zen-folders open <url>...   # open pages in this worktree's folder
+zen-folders list            # what is in it
+zen-folders close <url|#>   # drop a tab, by url or by its number in list
+zen-folders destroy         # remove the folder and its tabs
 ```
 
-`open` is idempotent: a url already in the folder is not opened twice. Silence means
-success — only `list` prints on the happy path.
+`open` is idempotent: a page already in the folder is not opened twice. Silence
+means success.
 
 ## When to open a page
 
-- Documentation you actually read to make a decision.
-- The pull request once you create it.
-- The ticket or issue driving the work.
-- A dashboard, log view, or failing CI run the human will want to look at.
+- The PR you just created.
+- The ticket you are implementing.
+- Documentation that decided something — the page you would cite in review.
+- A failing CI run or a dashboard the human will want to look at.
 
 ## When not to
 
-- Throwaway lookups you resolved in one glance.
-- Anything you fetched only to quote back into the conversation.
-- Pages behind a login the human has not mentioned.
+- Pages you fetched only to quote back.
+- Throwaway lookups and search results.
+- Anything the human did not ask about and would not think to check.
 
-Err on the side of fewer tabs. The folder is a handover, not a history.
+A folder with four pages that matter is useful. One with forty is noise.
 
 ## Teardown
 
-Run `zen-folders destroy` when the worktree's work is finished and merged. If the
-worktree is deleted without it, the folder is reaped on the next command.
+When the work is finished and the worktree is going away:
+
+```bash
+zen-folders destroy
+```
 
 ## If it fails
 
-`no Zen listening on 127.0.0.1:<port>` means the human has not run `zen-folders setup`
-or has not restarted Zen since. Report that line and move on — it is not your task to
-fix, and it does not block the work.
+Report the error line and move on. Opening a browser tab is not the task and
+never a blocker.

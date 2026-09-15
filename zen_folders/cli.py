@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from . import bootstrap, state, worktree
+from . import profile, state, worktree
 from .zen import Zen, ZenUnreachable, session
 
 
@@ -62,6 +62,11 @@ def _gc() -> None:
         _reap(zen)
 
 
+def _reseed() -> None:
+    """Quit the agent browser first; a live profile cannot be replaced."""
+    profile.seed(force=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="zen-folders", description="One git worktree, one Zen folder."
@@ -75,7 +80,7 @@ def main() -> int:
     closer.add_argument("targets", nargs="+")
     commands.add_parser("destroy", help="remove this worktree's folder and its tabs")
     commands.add_parser("gc", help="remove folders whose worktree is gone")
-    commands.add_parser("setup", help="enable Marionette in Zen")
+    commands.add_parser("reseed", help="refresh the agent browser's logins")
 
     args = parser.parse_args()
     actions = {
@@ -84,11 +89,11 @@ def main() -> int:
         "close": lambda: _close(args.targets),
         "destroy": _destroy,
         "gc": _gc,
-        "setup": bootstrap.run,
+        "reseed": _reseed,
     }
     try:
         actions[args.command]()
-    except (ZenUnreachable, bootstrap.SetupError, worktree.NotAWorktree) as error:
+    except (ZenUnreachable, profile.NoProfile, worktree.NotAWorktree) as error:
         print(error, file=sys.stderr)
         return 1
     return 0
