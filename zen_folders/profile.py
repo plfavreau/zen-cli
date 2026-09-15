@@ -1,23 +1,28 @@
-"""The agent profile is seeded from the real one so logins carry over."""
+"""The agent browser runs on its own profile, never the one you browse with.
 
-from __future__ import annotations
+It starts empty. Copying your cookies, extensions or passwords into it is an
+explicit, interactive choice, because that is personal data leaving one browser
+for another.
+"""
 
 import configparser
 import shutil
+import sys
 from pathlib import Path
 
 from . import state
 
 PROFILE = state.HOME / "profile"
 
-_ROOTS = [Path.home() / "Library/Application Support/zen", Path.home() / ".zen"]
+_ROOTS = [
+    Path.home() / "Library/Application Support/zen",
+    Path.home() / ".zen",
+]
 
-_FILES = [
+_SESSION = [
     "cookies.sqlite",
-    "key4.db",
-    "logins.json",
-    "cert9.db",
     "permissions.sqlite",
+    "cert9.db",
     "containers.json",
     "handlers.json",
     "search.json.mozlz4",
@@ -26,6 +31,8 @@ _FILES = [
     "addonStartup.json.lz4",
     "prefs.js",
 ]
+
+_PASSWORDS = ["key4.db", "logins.json"]
 
 _DIRS = ["extensions", "browser-extension-data", "chrome"]
 
@@ -36,18 +43,18 @@ class NoProfile(Exception):
 
 def source() -> Path:
     for root in _ROOTS:
-        ini = root / "profiles.ini"
-        if not ini.exists():
+        config = root / "profiles.ini"
+        if not config.exists():
             continue
-        parser = configparser.ConfigParser()
-        parser.read(ini)
-        for name in parser.sections():
-            if name.startswith("Install") and parser[name].get("Default"):
-                return root / parser[name]["Default"]
-        for name in parser.sections():
-            if parser[name].get("Default") == "1" and parser[name].get("Path"):
-                return root / parser[name]["Path"]
-    raise NoProfile("no Zen profile found")
+        parsed = configparser.ConfigParser()
+        parsed.read(config)
+        for section in parsed.sections():
+            if section.startswith("Install") and parsed[section].get("Default"):
+                return root / parsed[section]["Default"]
+        for section in parsed.sections():
+            if parsed[section].get("Default") == "1" and parsed[section].get("Path"):
+                return root / parsed[section]["Path"]
+    raise NoProfile("no Zen profile found; launch Zen once first")
 
 
 def _copy(src: Path, dst: Path) -> None:
@@ -58,22 +65,52 @@ def _copy(src: Path, dst: Path) -> None:
             shutil.copy2(part, dst.with_name(dst.name + suffix))
 
 
-def seed(force: bool = False) -> None:
-    if PROFILE.exists() and not force:
-        return
-    src = source()
-    if PROFILE.exists():
-        shutil.rmtree(PROFILE)
-    PROFILE.mkdir(parents=True)
-    for name in _FILES:
-        origin = src / name
-        if origin.exists():
-            _copy(origin, PROFILE / name)
-    for name in _DIRS:
-        origin = src / name
-        if origin.exists():
-            shutil.copytree(origin, PROFILE / name, dirs_exist_ok=True)
+def _write_prefs() -> None:
     (PROFILE / "user.js").write_text(
         f'user_pref("marionette.port", {state.port()});\n'
         'user_pref("browser.shell.checkDefaultBrowser", false);\n'
     )
+
+
+def ensure() -> bool:
+    """True when an empty profile was just created."""
+    if PROFILE.exists():
+        return False
+    PROFILE.mkdir(parents=True)
+    _write_prefs()
+    return True
+
+
+def plan(passwords: bool) -> tuple[Path, list[str]]:
+    src = source()
+    names = [n for n in _SESSION + (_PASSWORDS if passwords else []) if (src / n).exists()]
+    names += [n for n in _DIRS if (src / n).is_dir()]
+    return src, names
+
+
+def seed(passwords: bool = False) -> None:
+    if not sys.stdin.isatty():
+        raise NoProfile("run `zen-folders seed` yourself; it copies personal data")
+
+    src, names = plan(passwords)
+    print(f"copy from {src}")
+    for name in names:
+        print(f"  {name}")
+    if passwords:
+        print("\nthis includes your saved passwords.")
+    if input("\ncopy these into the agent browser? [y/N] ").strip().lower() not in (
+        "y",
+        "yes",
+    ):
+        return
+
+    if PROFILE.exists():
+        shutil.rmtree(PROFILE)
+    PROFILE.mkdir(parents=True)
+    for name in names:
+        origin = src / name
+        if origin.is_dir():
+            shutil.copytree(origin, PROFILE / name)
+        else:
+            _copy(origin, PROFILE / name)
+    _write_prefs()

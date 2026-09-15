@@ -16,9 +16,16 @@ uv tool install git+https://github.com/plfavreau/zen-folders   # 1. install
 npx skills add plfavreau/zen-folders -g                        # 2. teach your agents
 ```
 
-That is all. The first `open` copies your cookies, logins and extensions into a
-dedicated profile at `~/.zen-folders/profile` and starts a second Zen with it,
-so you are already signed in to the sites you use.
+That is all. The first `open` starts a second Zen on an empty profile at
+`~/.zen-folders/profile`. It knows nothing about you until you say otherwise.
+
+```bash
+zen-folders seed              # copy your cookies and extensions across
+zen-folders seed --passwords  # and your saved passwords
+```
+
+`seed` lists exactly what it will copy and asks before touching anything. It
+only runs from a terminal, never from an agent. Quit the agent browser first.
 
 ## Commands
 
@@ -28,7 +35,7 @@ zen-folders list            # what is in it
 zen-folders close <url|#>   # drop a tab
 zen-folders destroy         # remove the folder and its tabs
 zen-folders gc              # remove folders whose worktree is gone
-zen-folders reseed          # refresh the copied logins
+zen-folders seed            # copy your cookies and extensions across
 ```
 
 There is no way to name a folder. The one you get is derived from
@@ -52,8 +59,9 @@ announce itself as automated — enough for Cloudflare and friends to block it.
 Running that on your daily profile breaks the sites you actually use, so
 zen-folders runs its own.
 
-`reseed` refreshes the copy when you have signed in to something new. Quit the
-agent browser first.
+That profile starts empty. Your cookies and passwords are personal data, so
+moving them into a second browser is something you ask for, not something a
+tool does on your behalf while opening a tab.
 
 ## Requirements
 

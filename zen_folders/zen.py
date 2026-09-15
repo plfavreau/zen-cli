@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import socket
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,18 +19,22 @@ class ZenUnreachable(Exception):
     pass
 
 
-def _listening() -> bool:
+def running() -> bool:
     with socket.socket() as probe:
         probe.settimeout(0.3)
         return probe.connect_ex(("127.0.0.1", state.port())) == 0
 
 
 def launch() -> None:
-    if _listening():
+    if running():
         return
     if not ZEN.exists():
         raise ZenUnreachable(f"Zen not found at {ZEN}")
-    profile.seed()
+    if profile.ensure():
+        print(
+            "started an empty agent browser; `zen-folders seed` copies your logins",
+            file=sys.stderr,
+        )
     subprocess.Popen(
         [str(ZEN), "--no-remote", "--profile", str(profile.PROFILE)],
         env={**os.environ, "MOZ_MARIONETTE": "1", "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"},
@@ -38,7 +43,7 @@ def launch() -> None:
     )
     deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
-        if _listening():
+        if running():
             return
         time.sleep(1)
     raise ZenUnreachable("the agent browser did not start")

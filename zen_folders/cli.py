@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from . import profile, state, worktree
-from .zen import Zen, ZenUnreachable, session
+from .zen import Zen, ZenUnreachable, running, session
 
 
 def _reap(zen: Zen) -> None:
@@ -62,9 +62,11 @@ def _gc() -> None:
         _reap(zen)
 
 
-def _reseed() -> None:
-    """Quit the agent browser first; a live profile cannot be replaced."""
-    profile.seed(force=True)
+def _seed(passwords: bool) -> None:
+    if running():
+        print("quit the agent browser first", file=sys.stderr)
+        return
+    profile.seed(passwords)
 
 
 def main() -> int:
@@ -80,7 +82,12 @@ def main() -> int:
     closer.add_argument("targets", nargs="+")
     commands.add_parser("destroy", help="remove this worktree's folder and its tabs")
     commands.add_parser("gc", help="remove folders whose worktree is gone")
-    commands.add_parser("reseed", help="refresh the agent browser's logins")
+    seeder = commands.add_parser(
+        "seed", help="copy your cookies and extensions into the agent browser"
+    )
+    seeder.add_argument(
+        "--passwords", action="store_true", help="also copy saved passwords"
+    )
 
     args = parser.parse_args()
     actions = {
@@ -89,7 +96,7 @@ def main() -> int:
         "close": lambda: _close(args.targets),
         "destroy": _destroy,
         "gc": _gc,
-        "reseed": _reseed,
+        "seed": lambda: _seed(args.passwords),
     }
     try:
         actions[args.command]()
