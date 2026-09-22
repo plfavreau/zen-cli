@@ -45,7 +45,7 @@ def launch() -> None:
             "started an empty agent browser; `zen-folders seed` copies your logins",
             file=sys.stderr,
         )
-    subprocess.Popen(
+    process = subprocess.Popen(
         [str(ZEN), "--no-remote", "--profile", str(profile.PROFILE)],
         env={**os.environ, "MOZ_MARIONETTE": "1", "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"},
         stdout=subprocess.DEVNULL,
@@ -54,9 +54,33 @@ def launch() -> None:
     deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
         if running():
+            _foreground(process.pid)
             return
         time.sleep(1)
     raise ZenUnreachable("the agent browser did not start")
+
+
+def _foreground(pid: int) -> None:
+    # macOS suspends layout for windows it reports as fully covered, which leaves
+    # click/screenshot working against an unrendered page. Targets NSRunningApplication
+    # by pid directly rather than System Events, whose "unix id" filter can silently
+    # match a different running instance of the same app. The window is not mapped
+    # the instant the marionette port opens, so retry briefly. Best-effort: a denied
+    # Automation permission should not break the browser starting.
+    script = f"""
+    ObjC.import("AppKit");
+    const app = $.NSRunningApplication.runningApplicationWithProcessIdentifier({pid});
+    app.isNil() ? "not-found" : (app.activateWithOptions($.NSApplicationActivateIgnoringOtherApps), "ok");
+    """
+    for _ in range(6):
+        result = subprocess.run(
+            ["osascript", "-l", "JavaScript", "-e", script],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout.strip() == "ok":
+            return
+        time.sleep(0.5)
 
 
 _PRELUDE = """
