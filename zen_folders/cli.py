@@ -4,14 +4,15 @@ import sys
 from pathlib import Path
 
 from . import profile, state, worktree
-from .zen import ElementNotFound, TargetNotFound, Zen, ZenUnreachable, running, session
+from .daemon import session
+from .zen import ElementNotFound, TargetNotFound, ZenUnreachable, running
 
 
 def _target(value: str) -> int | str:
     return int(value) - 1 if value.isdigit() else value
 
 
-def _reap(zen: Zen) -> None:
+def _reap(zen) -> None:
     for path, record in state.orphans():
         zen.destroy(record["id"])
         state.forget(path)
