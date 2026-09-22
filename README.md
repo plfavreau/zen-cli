@@ -36,8 +36,11 @@ zen-folders close <url|#>            # drop a tab
 zen-folders click <url|#> <css|x,y>  # click an element, or exact viewport coordinates
 zen-folders fill <url|#> <css> <text>  # fill an input in a tab
 zen-folders text <url|#> [css]       # read an element's text, or the page's
+zen-folders hover <url|#> <css>      # move the pointer over an element
+zen-folders key <url|#> <name>       # press a key: Enter, Escape, Tab, ArrowDown...
+zen-folders cookies <url|#>          # print cookies for the current page
 zen-folders scroll <url|#> <px|css>  # scroll by pixels, or an element into view
-zen-folders screenshot <url|#> <path>  # save a screenshot of what is on screen
+zen-folders screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
 zen-folders destroy                  # remove the folder and its tabs
 zen-folders gc                       # remove folders whose worktree is gone
 zen-folders seed                     # copy your cookies and extensions across
@@ -68,7 +71,11 @@ position.
 
 `click`'s target is a css selector by default, or exact viewport coordinates
 as `x,y` — `zen-folders click 1 "400,300"` moves a real pointer there and
-clicks, the same primitive `scroll`/`screenshot` already work in.
+clicks, the same primitive `hover` and `key` use for pointer and keyboard
+input. `key` takes a named key (`Enter`, `Escape`, `Tab`, `ArrowDown`, ...)
+or a single literal character for anything not in that list. `screenshot`
+takes an optional selector to capture just that element instead of the
+whole screen.
 
 A `fill` in one command and a `click` in the next stay on the same page: a
 small background daemon (started on first use, alongside the browser) keeps

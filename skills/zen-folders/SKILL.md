@@ -18,20 +18,29 @@ zen-folders close <url|#>              # drop a tab, by url or by its number in 
 zen-folders click <url|#> <css|x,y>    # click an element, or exact viewport coordinates
 zen-folders fill <url|#> <css> <text>  # fill an input
 zen-folders text <url|#> [css]         # read an element's text, or the page's
+zen-folders hover <url|#> <css>        # move the pointer over an element
+zen-folders key <url|#> <name>         # press a key: Enter, Escape, Tab, ArrowDown...
+zen-folders cookies <url|#>            # print cookies for the current page
 zen-folders scroll <url|#> <px|css>    # scroll by pixels, or an element into view
-zen-folders screenshot <url|#> <path>  # save a screenshot
+zen-folders screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
 zen-folders destroy                    # remove the folder and its tabs
 ```
 
 `open` is idempotent: a page already in the folder is not opened twice. Silence
 means success.
 
-`click`/`fill`/`text`/`scroll`/`screenshot` let you drive a page, not just
-look at it — fill and submit a form, click through a flow, read back a
-result, screenshot what rendered. Address the tab the same way as `close`: by
-its url or its number in `list`. A `fill` in one command and a `click` in a
-later one see the same value; a background daemon keeps one connection to the
-tab alive across commands specifically so this works.
+`click`/`fill`/`text`/`hover`/`key`/`scroll`/`screenshot`/`cookies` let you
+drive a page, not just look at it — fill and submit a form, click through a
+flow, read back a result, screenshot what rendered. Address the tab the same
+way as `close`: by its url or its number in `list`. A `fill` in one command
+and a `click` in a later one see the same value; a background daemon keeps
+one connection to the tab alive across commands specifically so this works.
+
+`key` presses a named key (`Enter`, `Escape`, `Tab`, `ArrowDown`, ...) or a
+single literal character for anything not in that list — useful to submit a
+form with Enter instead of hunting for a submit button's selector, or to
+close a modal with Escape. `hover` is the pointer-only version of `click`,
+for menus and tooltips that only reveal on mouseover.
 
 `click`/`fill` are real WebDriver interactions, not scripted ones: a click
 auto-scrolls its target into view for you, so you do not need `scroll` just
@@ -54,6 +63,8 @@ a page-driven cross-origin navigation.
 the page the way a person would actually see it. If the human covers it with
 another window later, screenshots go back to an unrendered fallback until it
 is brought forward again — not something you can fix from inside the page.
+Give `screenshot` a selector to capture just one element instead of the
+whole screen.
 
 ## When to open a page
 
