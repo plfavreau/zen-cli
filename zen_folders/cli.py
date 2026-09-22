@@ -5,7 +5,7 @@ from pathlib import Path
 
 from . import profile, state, worktree
 from .daemon import session
-from .zen import ElementNotFound, TargetNotFound, ZenUnreachable, running
+from .zen import ElementNotFound, InvalidKey, TargetNotFound, ZenUnreachable, running
 
 
 def _target(value: str) -> int | str:
@@ -96,6 +96,35 @@ def _text(target: str, selector: str | None) -> None:
         print(zen.text(url, selector))
 
 
+def _hover(target: str, selector: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        zen.hover(url, selector)
+
+
+def _key(target: str, name: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        zen.key(url, name)
+
+
+def _cookies(target: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        cookies = zen.cookies(url)
+    for cookie in cookies:
+        print(f"{cookie['name']}={cookie['value']}")
+
+
 def _scroll(target: str, amount: str) -> None:
     record = state.get(worktree.root())
     if not record:
@@ -105,13 +134,13 @@ def _scroll(target: str, amount: str) -> None:
         zen.scroll(url, _amount(amount))
 
 
-def _screenshot(target: str, path: str) -> None:
+def _screenshot(target: str, path: str, selector: str | None) -> None:
     record = state.get(worktree.root())
     if not record:
         return
     with session() as zen:
         url = zen.select(record["id"], _target(target))
-        data = zen.screenshot(url)
+        data = zen.screenshot(url, selector)
     Path(path).write_bytes(base64.b64decode(data))
 
 
@@ -160,12 +189,21 @@ def main() -> int:
     texter = commands.add_parser("text", help="print an element's text, or the page's")
     texter.add_argument("target", help="url or list index")
     texter.add_argument("selector", nargs="?", help="css selector")
+    hoverer = commands.add_parser("hover", help="move the pointer over an element")
+    hoverer.add_argument("target", help="url or list index")
+    hoverer.add_argument("selector", help="css selector")
+    keyer = commands.add_parser("key", help="press a key (Enter, Escape, Tab, ArrowDown...)")
+    keyer.add_argument("target", help="url or list index")
+    keyer.add_argument("name", help="key name, or a single literal character")
+    cookier = commands.add_parser("cookies", help="print cookies for the current page")
+    cookier.add_argument("target", help="url or list index")
     scroller = commands.add_parser("scroll", help="scroll the page, or an element into view")
     scroller.add_argument("target", help="url or list index")
     scroller.add_argument("amount", help="pixels (negative scrolls up), or a css selector")
     shooter = commands.add_parser("screenshot", help="save a screenshot of a tab")
     shooter.add_argument("target", help="url or list index")
     shooter.add_argument("path")
+    shooter.add_argument("selector", nargs="?", help="css selector to screenshot just that element")
     commands.add_parser("destroy", help="remove this worktree's folder and its tabs")
     commands.add_parser("gc", help="remove folders whose worktree is gone")
     seeder = commands.add_parser(
@@ -183,8 +221,11 @@ def main() -> int:
         "click": lambda: _click(args.target, args.where),
         "fill": lambda: _fill(args.target, args.selector, args.text),
         "text": lambda: _text(args.target, args.selector),
+        "hover": lambda: _hover(args.target, args.selector),
+        "key": lambda: _key(args.target, args.name),
+        "cookies": lambda: _cookies(args.target),
         "scroll": lambda: _scroll(args.target, args.amount),
-        "screenshot": lambda: _screenshot(args.target, args.path),
+        "screenshot": lambda: _screenshot(args.target, args.path, args.selector),
         "destroy": _destroy,
         "gc": _gc,
         "seed": lambda: _seed(args.passwords),
@@ -195,6 +236,7 @@ def main() -> int:
         ZenUnreachable,
         TargetNotFound,
         ElementNotFound,
+        InvalidKey,
         profile.NoProfile,
         worktree.NotAWorktree,
     ) as error:

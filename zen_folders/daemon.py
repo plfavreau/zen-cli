@@ -40,10 +40,18 @@ _METHODS = (
     "click",
     "fill",
     "text",
+    "hover",
+    "key",
+    "cookies",
     "screenshot",
     "scroll",
 )
-_BUSINESS_ERRORS = (_zen.TargetNotFound, _zen.ElementNotFound, _zen.ZenUnreachable)
+_BUSINESS_ERRORS = (
+    _zen.TargetNotFound,
+    _zen.ElementNotFound,
+    _zen.ZenUnreachable,
+    _zen.InvalidKey,
+)
 
 
 class _Handler(socketserver.StreamRequestHandler):

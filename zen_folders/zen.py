@@ -16,6 +16,7 @@ from marionette_driver.errors import (
     NoSuchElementException,
     StaleElementException,
 )
+from marionette_driver.keys import Keys
 from marionette_driver.marionette import ActionSequence, Marionette
 
 from . import profile, state
@@ -32,6 +33,10 @@ class TargetNotFound(Exception):
 
 
 class ElementNotFound(Exception):
+    pass
+
+
+class InvalidKey(Exception):
     pass
 
 
@@ -167,8 +172,6 @@ gBrowser.selectedTab = tab;
 return urlOf(tab);
 """
 
-_TEXT = "return document.querySelector(arguments[0]).innerText;"
-
 _SCROLL_BY = "window.scrollBy(0, arguments[0]);"
 
 _SCROLL_TO = """
@@ -226,15 +229,34 @@ class Zen:
     def text(self, url: str, selector: str | None) -> str:
         with self._content(url) as driver:
             if selector:
-                self._find(driver, selector)
-                return driver.execute_script(_TEXT, script_args=[selector])
+                return self._find(driver, selector).text
             return driver.execute_script("return document.body.innerText")
 
-    def screenshot(self, url: str) -> str:
+    def hover(self, url: str, selector: str) -> None:
         with self._content(url) as driver:
+            element = self._find(driver, selector)
+            ActionSequence(driver, "pointer", "mouse").pointer_move(0, 0, origin=element).perform()
+
+    def key(self, url: str, name: str) -> None:
+        code = getattr(Keys, name.upper().replace("-", "_"), None)
+        if code is None:
+            if len(name) == 1:
+                code = name
+            else:
+                raise InvalidKey(f"unknown key: {name!r}")
+        with self._content(url) as driver:
+            ActionSequence(driver, "key", "keyboard").key_down(code).key_up(code).perform()
+
+    def cookies(self, url: str) -> list[dict]:
+        with self._content(url) as driver:
+            return driver.get_cookies()
+
+    def screenshot(self, url: str, selector: str | None = None) -> str:
+        with self._content(url) as driver:
+            element = self._find(driver, selector) if selector else None
             # Viewport only, not the full scrollable page: what an agent sees
             # after a `scroll` is what a person looking at the screen would see.
-            return driver.screenshot(full=False)
+            return driver.screenshot(element=element, full=False)
 
     def scroll(self, url: str, amount: int | str) -> None:
         with self._content(url) as driver:
