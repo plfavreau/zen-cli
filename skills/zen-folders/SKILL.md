@@ -28,9 +28,14 @@ means success.
 `click`/`fill`/`text`/`screenshot` let you drive a page, not just look at
 it — fill and submit a form, click through a flow, read back a result, screenshot
 what rendered. Address the tab the same way as `close`: by its url or its number
-in `list`. Do the fill and the click that depends on it back to back; a value
-you set is not guaranteed to still be there if you let a lot of time pass
-before the next command.
+in `list`. A `fill` in one command and a `click` in a later one see the same
+value; a background daemon keeps one connection to the tab alive across
+commands specifically so this works.
+
+Clicking a link that navigates elsewhere is not reflected in a later
+`list`/`close` by URL — address that tab by its `list` index afterwards
+instead, since Firefox does not reliably update a tab's tracked location for
+a page-driven cross-origin navigation.
 
 `open` raises the browser window when it first starts, so a `screenshot` shows
 the page the way a person would actually see it. If the human covers it with

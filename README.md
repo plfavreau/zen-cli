@@ -53,10 +53,19 @@ rendered. `open` brings the agent browser to the front of your other windows
 the moment it starts, because macOS stops rendering a window it can't see at
 all, and a page rendered at zero size is what `screenshot` would otherwise
 return. If you cover the agent browser with another window later, expect the
-same until you bring it forward again. State you set (a typed value, a
-clicked toggle) is reliable within one command chain; if you fill a field,
-submit it in the very next call rather than much later, since a
-long-backgrounded tab is not guaranteed to keep it.
+same until you bring it forward again.
+
+A `fill` in one command and a `click` in the next stay on the same page: a
+small background daemon (started on first use, alongside the browser) keeps
+one Marionette connection alive across commands, because Firefox resets an
+input's typed value the moment the connection watching its tab disconnects —
+which every command used to do, before returning to the shell.
+
+One known gap: clicking a link that navigates elsewhere is not reflected in
+a later `list`/`close` by URL — Firefox does not reliably update a tab's
+tracked location for a cross-origin navigation triggered from the page
+itself, only chrome-driven ones. Targeting that tab by its `list` index still
+works fine; it is only URL-based targeting that goes stale after a click.
 
 ## Teardown
 
