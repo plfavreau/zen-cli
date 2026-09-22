@@ -69,6 +69,10 @@ def _write_prefs() -> None:
     (PROFILE / "user.js").write_text(
         f'user_pref("marionette.port", {state.port()});\n'
         'user_pref("browser.shell.checkDefaultBrowser", false);\n'
+        # No one is ever sitting at this profile to click through a first-run tour.
+        'user_pref("zen.welcome-screen.seen", true);\n'
+        'user_pref("browser.aboutwelcome.enabled", false);\n'
+        'user_pref("browser.preonboarding.enabled", false);\n'
     )
 
 
