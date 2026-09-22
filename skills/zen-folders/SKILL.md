@@ -12,14 +12,25 @@ yours.
 ## Commands
 
 ```bash
-zen-folders open <url>...   # open pages in this worktree's folder
-zen-folders list            # what is in it
-zen-folders close <url|#>   # drop a tab, by url or by its number in list
-zen-folders destroy         # remove the folder and its tabs
+zen-folders open <url>...              # open pages in this worktree's folder
+zen-folders list                       # what is in it
+zen-folders close <url|#>              # drop a tab, by url or by its number in list
+zen-folders click <url|#> <css>        # click an element
+zen-folders fill <url|#> <css> <text>  # fill an input
+zen-folders text <url|#> [css]         # read an element's text, or the page's
+zen-folders screenshot <url|#> <path>  # save a screenshot
+zen-folders destroy                    # remove the folder and its tabs
 ```
 
 `open` is idempotent: a page already in the folder is not opened twice. Silence
 means success.
+
+`click`/`fill`/`text`/`screenshot` let you drive a page, not just look at
+it — fill and submit a form, click through a flow, read back a result, screenshot
+what rendered. Address the tab the same way as `close`: by its url or its number
+in `list`. Do the fill and the click that depends on it back to back; a value
+you set is not guaranteed to still be there if you let a lot of time pass
+before the next command.
 
 ## When to open a page
 

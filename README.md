@@ -30,18 +30,29 @@ only runs from a terminal, never from an agent. Quit the agent browser first.
 ## Commands
 
 ```bash
-zen-folders open <url>...   # open pages in this worktree's folder
-zen-folders list            # what is in it
-zen-folders close <url|#>   # drop a tab
-zen-folders destroy         # remove the folder and its tabs
-zen-folders gc              # remove folders whose worktree is gone
-zen-folders seed            # copy your cookies and extensions across
+zen-folders open <url>...            # open pages in this worktree's folder
+zen-folders list                     # what is in it
+zen-folders close <url|#>            # drop a tab
+zen-folders click <url|#> <css>      # click an element in a tab
+zen-folders fill <url|#> <css> <text>  # fill an input in a tab
+zen-folders text <url|#> [css]       # read an element's text, or the page's
+zen-folders screenshot <url|#> <path>  # save a screenshot of a tab
+zen-folders destroy                  # remove the folder and its tabs
+zen-folders gc                       # remove folders whose worktree is gone
+zen-folders seed                     # copy your cookies and extensions across
 ```
 
 There is no way to name a folder. The one you get is derived from
 `git rev-parse --show-toplevel`, so an agent can only ever touch the folder of
 the worktree it is working in, and `destroy` only removes folders this tool
 created.
+
+`click`/`fill`/`text`/`screenshot` drive the actual page, not just the tab —
+useful for an agent that needs to log a state, submit a form, or confirm a fix
+rendered. They run against a tab whether or not its window has real screen
+focus. State you set (a typed value, a clicked toggle) is reliable within one
+command chain; if you fill a field, submit it in the very next call rather
+than much later, since a long-backgrounded tab is not guaranteed to keep it.
 
 ## Teardown
 
