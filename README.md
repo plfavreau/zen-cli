@@ -33,7 +33,7 @@ only runs from a terminal, never from an agent. Quit the agent browser first.
 zen-folders open <url>...            # open pages in this worktree's folder
 zen-folders list                     # what is in it
 zen-folders close <url|#>            # drop a tab
-zen-folders click <url|#> <css>      # click an element in a tab
+zen-folders click <url|#> <css|x,y>  # click an element, or exact viewport coordinates
 zen-folders fill <url|#> <css> <text>  # fill an input in a tab
 zen-folders text <url|#> [css]       # read an element's text, or the page's
 zen-folders scroll <url|#> <px|css>  # scroll by pixels, or an element into view
@@ -57,11 +57,18 @@ otherwise return. If you cover the agent browser with another window later,
 expect the same until you bring it forward again.
 
 `screenshot` captures only what is on screen, the same as a person looking at
-the window — not the whole scrollable page. `click`/`fill`/`text` act on
-elements directly regardless of scroll position, but `scroll` is still the
-only way to trigger scroll-driven page behavior, like `IntersectionObserver`
-lazy-loading or infinite-scroll feeds, since nothing else ever moves the
-viewport.
+the window — not the whole scrollable page. `click`/`fill`/`text` are real
+WebDriver interactions (`element.click()`, `element.send_keys()`), not
+scripted ones: a click sends a real, trusted click event and auto-scrolls
+the target into view for you. `scroll` is still the only way to trigger
+scroll-driven page behavior, like `IntersectionObserver` lazy-loading or
+infinite-scroll feeds, since a click auto-scrolling to what it needs never
+moves the viewport for anything else that happens to be watching scroll
+position.
+
+`click`'s target is a css selector by default, or exact viewport coordinates
+as `x,y` — `zen-folders click 1 "400,300"` moves a real pointer there and
+clicks, the same primitive `scroll`/`screenshot` already work in.
 
 A `fill` in one command and a `click` in the next stay on the same page: a
 small background daemon (started on first use, alongside the browser) keeps

@@ -15,7 +15,7 @@ yours.
 zen-folders open <url>...              # open pages in this worktree's folder
 zen-folders list                       # what is in it
 zen-folders close <url|#>              # drop a tab, by url or by its number in list
-zen-folders click <url|#> <css>        # click an element
+zen-folders click <url|#> <css|x,y>    # click an element, or exact viewport coordinates
 zen-folders fill <url|#> <css> <text>  # fill an input
 zen-folders text <url|#> [css]         # read an element's text, or the page's
 zen-folders scroll <url|#> <px|css>    # scroll by pixels, or an element into view
@@ -33,13 +33,17 @@ its url or its number in `list`. A `fill` in one command and a `click` in a
 later one see the same value; a background daemon keeps one connection to the
 tab alive across commands specifically so this works.
 
-`click`/`fill`/`text` reach any element regardless of scroll position, so
-you do not need `scroll` just to interact with something below the fold.
-Reach for it only when the page itself needs to see you scroll: content
-gated behind `IntersectionObserver` (lazy-loaded images, infinite-scroll
-feeds) will not load until the viewport actually reaches it. `scroll 1 400`
-moves the viewport by pixels (negative scrolls up); `scroll 1 ".next-page"`
-scrolls an element into view instead.
+`click`/`fill` are real WebDriver interactions, not scripted ones: a click
+auto-scrolls its target into view for you, so you do not need `scroll` just
+to reach something below the fold. Reach for `scroll` only when the page
+itself needs to see you scroll: content gated behind `IntersectionObserver`
+(lazy-loaded images, infinite-scroll feeds) will not load until the viewport
+actually reaches it. `scroll 1 400` moves the viewport by pixels (negative
+scrolls up); `scroll 1 ".next-page"` scrolls an element into view instead.
+
+`click`'s target is a css selector by default, or `x,y` viewport coordinates
+for something without a reliable selector — a canvas, a chart, anything you
+only know the position of. `click 1 "400,300"` clicks exactly there.
 
 Clicking a link that navigates elsewhere is not reflected in a later
 `list`/`close` by URL — address that tab by its `list` index afterwards
