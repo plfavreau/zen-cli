@@ -12,6 +12,13 @@ def _target(value: str) -> int | str:
     return int(value) - 1 if value.isdigit() else value
 
 
+def _amount(value: str) -> int | str:
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+
 def _reap(zen) -> None:
     for path, record in state.orphans():
         zen.destroy(record["id"])
@@ -79,6 +86,15 @@ def _text(target: str, selector: str | None) -> None:
         print(zen.text(url, selector))
 
 
+def _scroll(target: str, amount: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        zen.scroll(url, _amount(amount))
+
+
 def _screenshot(target: str, path: str) -> None:
     record = state.get(worktree.root())
     if not record:
@@ -134,6 +150,9 @@ def main() -> int:
     texter = commands.add_parser("text", help="print an element's text, or the page's")
     texter.add_argument("target", help="url or list index")
     texter.add_argument("selector", nargs="?", help="css selector")
+    scroller = commands.add_parser("scroll", help="scroll the page, or an element into view")
+    scroller.add_argument("target", help="url or list index")
+    scroller.add_argument("amount", help="pixels (negative scrolls up), or a css selector")
     shooter = commands.add_parser("screenshot", help="save a screenshot of a tab")
     shooter.add_argument("target", help="url or list index")
     shooter.add_argument("path")
@@ -154,6 +173,7 @@ def main() -> int:
         "click": lambda: _click(args.target, args.selector),
         "fill": lambda: _fill(args.target, args.selector, args.text),
         "text": lambda: _text(args.target, args.selector),
+        "scroll": lambda: _scroll(args.target, args.amount),
         "screenshot": lambda: _screenshot(args.target, args.path),
         "destroy": _destroy,
         "gc": _gc,

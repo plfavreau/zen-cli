@@ -167,6 +167,12 @@ el.dispatchEvent(new Event("change", { bubbles: true }));
 
 _TEXT = "return document.querySelector(arguments[0]).innerText;"
 
+_SCROLL_BY = "window.scrollBy(0, arguments[0]);"
+
+_SCROLL_TO = """
+document.querySelector(arguments[0]).scrollIntoView({ block: "center" });
+"""
+
 
 class Zen:
     def __init__(self, driver: Marionette):
@@ -214,7 +220,17 @@ class Zen:
 
     def screenshot(self, url: str) -> str:
         with self._content(url) as driver:
-            return driver.screenshot()
+            # Viewport only, not the full scrollable page: what an agent sees
+            # after a `scroll` is what a person looking at the screen would see.
+            return driver.screenshot(full=False)
+
+    def scroll(self, url: str, amount: int | str) -> None:
+        with self._content(url) as driver:
+            if isinstance(amount, int):
+                driver.execute_script(_SCROLL_BY, script_args=[amount])
+            else:
+                self._find(driver, amount)
+                driver.execute_script(_SCROLL_TO, script_args=[amount])
 
     @staticmethod
     def _find(driver: Marionette, selector: str):

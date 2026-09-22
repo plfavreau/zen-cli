@@ -31,7 +31,18 @@ SOCKET = state.HOME / "daemon.sock"
 # per-process, so acquiring it again in here would deadlock those commands.
 _SPAWN_LOCK = state.HOME / "daemon-spawn.lock"
 
-_METHODS = ("open", "list", "close", "destroy", "select", "click", "fill", "text", "screenshot")
+_METHODS = (
+    "open",
+    "list",
+    "close",
+    "destroy",
+    "select",
+    "click",
+    "fill",
+    "text",
+    "screenshot",
+    "scroll",
+)
 _BUSINESS_ERRORS = (_zen.TargetNotFound, _zen.ElementNotFound, _zen.ZenUnreachable)
 
 
