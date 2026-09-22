@@ -18,6 +18,7 @@ zen-folders close <url|#>              # drop a tab, by url or by its number in 
 zen-folders click <url|#> <css>        # click an element
 zen-folders fill <url|#> <css> <text>  # fill an input
 zen-folders text <url|#> [css]         # read an element's text, or the page's
+zen-folders scroll <url|#> <px|css>    # scroll by pixels, or an element into view
 zen-folders screenshot <url|#> <path>  # save a screenshot
 zen-folders destroy                    # remove the folder and its tabs
 ```
@@ -25,12 +26,20 @@ zen-folders destroy                    # remove the folder and its tabs
 `open` is idempotent: a page already in the folder is not opened twice. Silence
 means success.
 
-`click`/`fill`/`text`/`screenshot` let you drive a page, not just look at
-it — fill and submit a form, click through a flow, read back a result, screenshot
-what rendered. Address the tab the same way as `close`: by its url or its number
-in `list`. A `fill` in one command and a `click` in a later one see the same
-value; a background daemon keeps one connection to the tab alive across
-commands specifically so this works.
+`click`/`fill`/`text`/`scroll`/`screenshot` let you drive a page, not just
+look at it — fill and submit a form, click through a flow, read back a
+result, screenshot what rendered. Address the tab the same way as `close`: by
+its url or its number in `list`. A `fill` in one command and a `click` in a
+later one see the same value; a background daemon keeps one connection to the
+tab alive across commands specifically so this works.
+
+`click`/`fill`/`text` reach any element regardless of scroll position, so
+you do not need `scroll` just to interact with something below the fold.
+Reach for it only when the page itself needs to see you scroll: content
+gated behind `IntersectionObserver` (lazy-loaded images, infinite-scroll
+feeds) will not load until the viewport actually reaches it. `scroll 1 400`
+moves the viewport by pixels (negative scrolls up); `scroll 1 ".next-page"`
+scrolls an element into view instead.
 
 Clicking a link that navigates elsewhere is not reflected in a later
 `list`/`close` by URL — address that tab by its `list` index afterwards

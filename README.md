@@ -36,7 +36,8 @@ zen-folders close <url|#>            # drop a tab
 zen-folders click <url|#> <css>      # click an element in a tab
 zen-folders fill <url|#> <css> <text>  # fill an input in a tab
 zen-folders text <url|#> [css]       # read an element's text, or the page's
-zen-folders screenshot <url|#> <path>  # save a screenshot of a tab
+zen-folders scroll <url|#> <px|css>  # scroll by pixels, or an element into view
+zen-folders screenshot <url|#> <path>  # save a screenshot of what is on screen
 zen-folders destroy                  # remove the folder and its tabs
 zen-folders gc                       # remove folders whose worktree is gone
 zen-folders seed                     # copy your cookies and extensions across
@@ -47,13 +48,20 @@ There is no way to name a folder. The one you get is derived from
 the worktree it is working in, and `destroy` only removes folders this tool
 created.
 
-`click`/`fill`/`text`/`screenshot` drive the actual page, not just the tab —
-useful for an agent that needs to log a state, submit a form, or confirm a fix
-rendered. `open` brings the agent browser to the front of your other windows
-the moment it starts, because macOS stops rendering a window it can't see at
-all, and a page rendered at zero size is what `screenshot` would otherwise
-return. If you cover the agent browser with another window later, expect the
-same until you bring it forward again.
+`click`/`fill`/`text`/`scroll`/`screenshot` drive the actual page, not just
+the tab — useful for an agent that needs to log a state, submit a form, or
+confirm a fix rendered. `open` brings the agent browser to the front of your
+other windows the moment it starts, because macOS stops rendering a window it
+can't see at all, and a page rendered at zero size is what `screenshot` would
+otherwise return. If you cover the agent browser with another window later,
+expect the same until you bring it forward again.
+
+`screenshot` captures only what is on screen, the same as a person looking at
+the window — not the whole scrollable page. `click`/`fill`/`text` act on
+elements directly regardless of scroll position, but `scroll` is still the
+only way to trigger scroll-driven page behavior, like `IntersectionObserver`
+lazy-loading or infinite-scroll feeds, since nothing else ever moves the
+viewport.
 
 A `fill` in one command and a `click` in the next stay on the same page: a
 small background daemon (started on first use, alongside the browser) keeps
