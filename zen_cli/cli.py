@@ -1,11 +1,19 @@
 import argparse
 import base64
+import subprocess
 import sys
 from pathlib import Path
 
 from . import profile, state, worktree
 from .daemon import session
 from .zen import ElementNotFound, InvalidKey, TargetNotFound, ZenUnreachable, running
+
+REPO = "https://github.com/plfavreau/zen-cli"
+SKILL = "plfavreau/zen-cli"
+
+
+class UpgradeFailed(Exception):
+    pass
 
 
 def _target(value: str) -> int | str:
@@ -180,6 +188,25 @@ def _seed(passwords: bool) -> None:
     profile.seed(passwords)
 
 
+def _upgrade() -> None:
+    cli = subprocess.run(["uv", "tool", "install", "--reinstall", f"git+{REPO}"])
+    if cli.returncode != 0:
+        raise UpgradeFailed("uv tool install failed; see output above")
+    command = ["npx", "skills", "add", SKILL, "-g"]
+    if not sys.stdin.isatty():
+        # An agent running this has no terminal to answer "which agents?" in;
+        # updating every agent the skills tool finds is the only way this can
+        # succeed unattended. A human in a real terminal keeps the picker.
+        command += ["--agent", "*", "-y"]
+    try:
+        skill = subprocess.run(command)
+    except FileNotFoundError:
+        print("npx not found; skipping the skill update", file=sys.stderr)
+        return
+    if skill.returncode != 0:
+        raise UpgradeFailed("skill update failed; see output above")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="zen-cli", description="Drive a dedicated Zen folder per git worktree."
@@ -229,6 +256,7 @@ def main() -> int:
     seeder.add_argument(
         "--passwords", action="store_true", help="also copy saved passwords"
     )
+    commands.add_parser("upgrade", help="update zen-cli and its skill to the latest")
 
     args = parser.parse_args()
     actions = {
@@ -247,6 +275,7 @@ def main() -> int:
         "destroy": _destroy,
         "gc": _gc,
         "seed": lambda: _seed(args.passwords),
+        "upgrade": _upgrade,
     }
     try:
         actions[args.command]()
@@ -255,6 +284,7 @@ def main() -> int:
         TargetNotFound,
         ElementNotFound,
         InvalidKey,
+        UpgradeFailed,
         profile.NoProfile,
         worktree.NotAWorktree,
     ) as error:

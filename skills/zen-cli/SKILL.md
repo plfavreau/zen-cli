@@ -116,4 +116,6 @@ zen-cli destroy
 ## If it fails
 
 Report the error line and move on. Opening a browser tab is not the task and
-never a blocker.
+never a blocker. If the failure looks like a missing command or feature this
+skill describes, `zen-cli upgrade` updates both the CLI and this skill in one
+step and is always safe to run.

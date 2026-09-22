@@ -20,6 +20,16 @@ That is all. The first `open` starts a second Zen on an empty profile at
 `~/.zen-cli/profile`. It knows nothing about you until you say otherwise.
 
 ```bash
+zen-cli upgrade  # re-run the two setup commands above, to update both
+```
+
+`upgrade` reinstalls the CLI from the latest commit on `main` and refreshes
+the skill across every agent tool it finds. Run from a real terminal it
+prompts for which agents to update, same as the original install; run by an
+agent (no terminal to prompt in) it updates all of them non-interactively —
+that is the only way it can succeed unattended.
+
+```bash
 zen-cli seed              # copy your cookies and extensions across
 zen-cli seed --passwords  # and your saved passwords
 ```
@@ -45,6 +55,7 @@ zen-cli screenshot <url|#> <path> [css]  # screenshot the screen, or just one el
 zen-cli destroy                  # remove the folder and its tabs
 zen-cli gc                       # remove folders whose worktree is gone
 zen-cli seed                     # copy your cookies and extensions across
+zen-cli upgrade                  # update the cli and its skill to the latest
 ```
 
 There is no way to name a folder. The one you get is derived from
