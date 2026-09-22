@@ -9,8 +9,14 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from marionette_driver.by import By
-from marionette_driver.errors import NoSuchElementException
-from marionette_driver.marionette import Marionette
+from marionette_driver.errors import (
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    InvalidSelectorException,
+    NoSuchElementException,
+    StaleElementException,
+)
+from marionette_driver.marionette import ActionSequence, Marionette
 
 from . import profile, state
 
@@ -27,6 +33,15 @@ class TargetNotFound(Exception):
 
 class ElementNotFound(Exception):
     pass
+
+
+_INTERACTION_ERRORS = (
+    NoSuchElementException,
+    InvalidSelectorException,
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    StaleElementException,
+)
 
 
 def running() -> bool:
@@ -152,19 +167,6 @@ gBrowser.selectedTab = tab;
 return urlOf(tab);
 """
 
-# Dispatched in-page rather than via WebDriver's native click/send_keys, which require
-# the tab to actually be the OS-focused window and fail otherwise (agents usually drive
-# tabs in the background).
-_CLICK = "document.querySelector(arguments[0]).click();"
-
-_FILL = """
-const el = document.querySelector(arguments[0]);
-el.focus();
-el.value = arguments[1];
-el.dispatchEvent(new Event("input", { bubbles: true }));
-el.dispatchEvent(new Event("change", { bubbles: true }));
-"""
-
 _TEXT = "return document.querySelector(arguments[0]).innerText;"
 
 _SCROLL_BY = "window.scrollBy(0, arguments[0]);"
@@ -201,15 +203,25 @@ class Zen:
             raise TargetNotFound(f"no such tab: {target!r}")
         return url
 
-    def click(self, url: str, selector: str) -> None:
+    def click(self, url: str, target: str | list) -> None:
         with self._content(url) as driver:
-            self._find(driver, selector)
-            driver.execute_script(_CLICK, script_args=[selector])
+            try:
+                if isinstance(target, list):
+                    x, y = target
+                    ActionSequence(driver, "pointer", "mouse").pointer_move(x, y).click().perform()
+                else:
+                    driver.find_element(By.CSS_SELECTOR, target).click()
+            except _INTERACTION_ERRORS as error:
+                raise ElementNotFound(error.message) from error
 
     def fill(self, url: str, selector: str, text: str) -> None:
         with self._content(url) as driver:
-            self._find(driver, selector)
-            driver.execute_script(_FILL, script_args=[selector, text])
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, selector)
+                element.clear()
+                element.send_keys(text)
+            except _INTERACTION_ERRORS as error:
+                raise ElementNotFound(error.message) from error
 
     def text(self, url: str, selector: str | None) -> str:
         with self._content(url) as driver:
@@ -236,8 +248,8 @@ class Zen:
     def _find(driver: Marionette, selector: str):
         try:
             return driver.find_element(By.CSS_SELECTOR, selector)
-        except NoSuchElementException as error:
-            raise ElementNotFound(f"no element matching {selector!r}") from error
+        except _INTERACTION_ERRORS as error:
+            raise ElementNotFound(error.message) from error
 
     @contextmanager
     def _content(self, url: str):

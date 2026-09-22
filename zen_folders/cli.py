@@ -19,6 +19,16 @@ def _amount(value: str) -> int | str:
         return value
 
 
+def _where(value: str) -> str | list[int]:
+    parts = value.split(",")
+    if len(parts) == 2:
+        try:
+            return [int(parts[0]), int(parts[1])]
+        except ValueError:
+            pass
+    return value
+
+
 def _reap(zen) -> None:
     for path, record in state.orphans():
         zen.destroy(record["id"])
@@ -59,13 +69,13 @@ def _close(targets: list[str]) -> None:
         zen.close(record["id"], sorted(urls))
 
 
-def _click(target: str, selector: str) -> None:
+def _click(target: str, where: str) -> None:
     record = state.get(worktree.root())
     if not record:
         return
     with session() as zen:
         url = zen.select(record["id"], _target(target))
-        zen.click(url, selector)
+        zen.click(url, _where(where))
 
 
 def _fill(target: str, selector: str, text: str) -> None:
@@ -142,7 +152,7 @@ def main() -> int:
     closer.add_argument("targets", nargs="+")
     clicker = commands.add_parser("click", help="click an element in a tab")
     clicker.add_argument("target", help="url or list index")
-    clicker.add_argument("selector", help="css selector")
+    clicker.add_argument("where", help="css selector, or 'x,y' viewport coordinates")
     filler = commands.add_parser("fill", help="fill an input in a tab")
     filler.add_argument("target", help="url or list index")
     filler.add_argument("selector", help="css selector")
@@ -170,7 +180,7 @@ def main() -> int:
         "open": lambda: _open(args.urls),
         "list": _list,
         "close": lambda: _close(args.targets),
-        "click": lambda: _click(args.target, args.selector),
+        "click": lambda: _click(args.target, args.where),
         "fill": lambda: _fill(args.target, args.selector, args.text),
         "text": lambda: _text(args.target, args.selector),
         "scroll": lambda: _scroll(args.target, args.amount),
