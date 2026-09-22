@@ -8,6 +8,8 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+from marionette_driver.by import By
+from marionette_driver.errors import NoSuchElementException
 from marionette_driver.marionette import Marionette
 
 from . import profile, state
@@ -16,6 +18,14 @@ ZEN = Path("/Applications/Zen.app/Contents/MacOS/zen")
 
 
 class ZenUnreachable(Exception):
+    pass
+
+
+class TargetNotFound(Exception):
+    pass
+
+
+class ElementNotFound(Exception):
     pass
 
 
@@ -52,7 +62,11 @@ def launch() -> None:
 _PRELUDE = """
 const norm = u => { try { return Services.io.newURI(u).spec; } catch (e) { return u; } };
 const findFolder = id => gBrowser.getAllTabGroups().find(g => g.id === id) ?? null;
-const urlOf = t => t.linkedBrowser?.currentURI?.spec ?? "";
+const urlOf = t => {
+  const live = t.linkedBrowser?.currentURI?.spec ?? "";
+  if (live && live !== "about:blank") return live;
+  return t.getAttribute("zen-folders-url") || live;
+};
 const realTabs = f => f.tabs.filter(t => !t.hasAttribute("zen-empty-tab"));
 """
 
@@ -64,9 +78,11 @@ const [folderId, label, urls] = arguments;
   let folder = folderId ? findFolder(folderId) : null;
   const present = new Set(folder ? realTabs(folder).map(urlOf) : []);
   const fresh = urls.filter(u => !present.has(norm(u)));
-  const tabs = fresh.map(u =>
-    gBrowser.addTab(u, { triggeringPrincipal: principal, skipAnimation: true })
-  );
+  const tabs = fresh.map(u => {
+    const tab = gBrowser.addTab(u, { triggeringPrincipal: principal, skipAnimation: true });
+    tab.setAttribute("zen-folders-url", u);
+    return tab;
+  });
   if (!folder) {
     folder = await gZenFolders.createFolder(tabs, { label, renameFolder: false });
   } else if (tabs.length) {
@@ -99,6 +115,34 @@ if (!folder) return resolve(false);
 folder.delete().then(() => resolve(true), () => resolve(false));
 """
 
+_SELECT = _PRELUDE + """
+const [folderId, indexOrUrl] = arguments;
+const folder = findFolder(folderId);
+if (!folder) return null;
+const tabs = realTabs(folder);
+const tab = typeof indexOrUrl === "number"
+  ? tabs[indexOrUrl]
+  : tabs.find(t => urlOf(t) === norm(indexOrUrl));
+if (!tab) return null;
+gBrowser.selectedTab = tab;
+return urlOf(tab);
+"""
+
+# Dispatched in-page rather than via WebDriver's native click/send_keys, which require
+# the tab to actually be the OS-focused window and fail otherwise (agents usually drive
+# tabs in the background).
+_CLICK = "document.querySelector(arguments[0]).click();"
+
+_FILL = """
+const el = document.querySelector(arguments[0]);
+el.focus();
+el.value = arguments[1];
+el.dispatchEvent(new Event("input", { bubbles: true }));
+el.dispatchEvent(new Event("change", { bubbles: true }));
+"""
+
+_TEXT = "return document.querySelector(arguments[0]).innerText;"
+
 
 class Zen:
     def __init__(self, driver: Marionette):
@@ -120,6 +164,53 @@ class Zen:
 
     def destroy(self, folder_id: str) -> bool:
         return self._driver.execute_async_script(_DESTROY, script_args=[folder_id])
+
+    def select(self, folder_id: str, target: int | str) -> str:
+        url = self._driver.execute_script(_SELECT, script_args=[folder_id, target])
+        if url is None:
+            raise TargetNotFound(f"no such tab: {target!r}")
+        return url
+
+    def click(self, url: str, selector: str) -> None:
+        with self._content(url) as driver:
+            self._find(driver, selector)
+            driver.execute_script(_CLICK, script_args=[selector])
+
+    def fill(self, url: str, selector: str, text: str) -> None:
+        with self._content(url) as driver:
+            self._find(driver, selector)
+            driver.execute_script(_FILL, script_args=[selector, text])
+
+    def text(self, url: str, selector: str | None) -> str:
+        with self._content(url) as driver:
+            if selector:
+                self._find(driver, selector)
+                return driver.execute_script(_TEXT, script_args=[selector])
+            return driver.execute_script("return document.body.innerText")
+
+    def screenshot(self, url: str) -> str:
+        with self._content(url) as driver:
+            return driver.screenshot()
+
+    @staticmethod
+    def _find(driver: Marionette, selector: str):
+        try:
+            return driver.find_element(By.CSS_SELECTOR, selector)
+        except NoSuchElementException as error:
+            raise ElementNotFound(f"no element matching {selector!r}") from error
+
+    @contextmanager
+    def _content(self, url: str):
+        driver = self._driver
+        driver.set_context("content")
+        try:
+            # driver.get_url() can lag right after a session attaches; document.URL is live.
+            current = driver.execute_script("return document.URL")
+            if current.rstrip("/") != url.rstrip("/"):
+                driver.navigate(url)
+            yield driver
+        finally:
+            driver.set_context("chrome")
 
 
 @contextmanager

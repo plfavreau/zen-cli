@@ -1,8 +1,14 @@
 import argparse
+import base64
 import sys
+from pathlib import Path
 
 from . import profile, state, worktree
-from .zen import Zen, ZenUnreachable, running, session
+from .zen import ElementNotFound, TargetNotFound, Zen, ZenUnreachable, running, session
+
+
+def _target(value: str) -> int | str:
+    return int(value) - 1 if value.isdigit() else value
 
 
 def _reap(zen: Zen) -> None:
@@ -45,6 +51,43 @@ def _close(targets: list[str]) -> None:
         zen.close(record["id"], sorted(urls))
 
 
+def _click(target: str, selector: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        zen.click(url, selector)
+
+
+def _fill(target: str, selector: str, text: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        zen.fill(url, selector, text)
+
+
+def _text(target: str, selector: str | None) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        print(zen.text(url, selector))
+
+
+def _screenshot(target: str, path: str) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        data = zen.screenshot(url)
+    Path(path).write_bytes(base64.b64decode(data))
+
+
 def _destroy() -> None:
     root = worktree.root()
     record = state.get(root)
@@ -80,6 +123,19 @@ def main() -> int:
     commands.add_parser("list", help="list tabs in this worktree's folder")
     closer = commands.add_parser("close", help="close tabs by url or list index")
     closer.add_argument("targets", nargs="+")
+    clicker = commands.add_parser("click", help="click an element in a tab")
+    clicker.add_argument("target", help="url or list index")
+    clicker.add_argument("selector", help="css selector")
+    filler = commands.add_parser("fill", help="fill an input in a tab")
+    filler.add_argument("target", help="url or list index")
+    filler.add_argument("selector", help="css selector")
+    filler.add_argument("text")
+    texter = commands.add_parser("text", help="print an element's text, or the page's")
+    texter.add_argument("target", help="url or list index")
+    texter.add_argument("selector", nargs="?", help="css selector")
+    shooter = commands.add_parser("screenshot", help="save a screenshot of a tab")
+    shooter.add_argument("target", help="url or list index")
+    shooter.add_argument("path")
     commands.add_parser("destroy", help="remove this worktree's folder and its tabs")
     commands.add_parser("gc", help="remove folders whose worktree is gone")
     seeder = commands.add_parser(
@@ -94,13 +150,23 @@ def main() -> int:
         "open": lambda: _open(args.urls),
         "list": _list,
         "close": lambda: _close(args.targets),
+        "click": lambda: _click(args.target, args.selector),
+        "fill": lambda: _fill(args.target, args.selector, args.text),
+        "text": lambda: _text(args.target, args.selector),
+        "screenshot": lambda: _screenshot(args.target, args.path),
         "destroy": _destroy,
         "gc": _gc,
         "seed": lambda: _seed(args.passwords),
     }
     try:
         actions[args.command]()
-    except (ZenUnreachable, profile.NoProfile, worktree.NotAWorktree) as error:
+    except (
+        ZenUnreachable,
+        TargetNotFound,
+        ElementNotFound,
+        profile.NoProfile,
+        worktree.NotAWorktree,
+    ) as error:
         print(error, file=sys.stderr)
         return 1
     return 0
