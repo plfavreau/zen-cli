@@ -21,6 +21,7 @@ zen-folders text <url|#> [css]         # read an element's text, or the page's
 zen-folders hover <url|#> <css>        # move the pointer over an element
 zen-folders key <url|#> <name>         # press a key: Enter, Escape, Tab, ArrowDown...
 zen-folders cookies <url|#>            # print cookies for the current page
+zen-folders network <url|#> [substring]  # print same-origin requests since load
 zen-folders scroll <url|#> <px|css>    # scroll by pixels, or an element into view
 zen-folders screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
 zen-folders destroy                    # remove the folder and its tabs
@@ -29,12 +30,21 @@ zen-folders destroy                    # remove the folder and its tabs
 `open` is idempotent: a page already in the folder is not opened twice. Silence
 means success.
 
-`click`/`fill`/`text`/`hover`/`key`/`scroll`/`screenshot`/`cookies` let you
-drive a page, not just look at it — fill and submit a form, click through a
-flow, read back a result, screenshot what rendered. Address the tab the same
-way as `close`: by its url or its number in `list`. A `fill` in one command
-and a `click` in a later one see the same value; a background daemon keeps
-one connection to the tab alive across commands specifically so this works.
+`click`/`fill`/`text`/`hover`/`key`/`scroll`/`screenshot`/`cookies`/`network`
+let you drive a page, not just look at it — fill and submit a form, click
+through a flow, read back a result, screenshot what rendered, check whether
+a request even succeeded. Address the tab the same way as `close`: by its
+url or its number in `list`. A `fill` in one command and a `click` in a later
+one see the same value; a background daemon keeps one connection to the tab
+alive across commands specifically so this works.
+
+`network` shows url, type, duration and real HTTP status for same-origin
+requests since the page loaded — including failures, so `network 1 api/`
+after a `click` is how you check whether the request that click triggered
+actually succeeded. Cross-origin requests print as `cross-origin` instead of
+a status; the browser hides that detail from the page unless the target
+server opts in, not something workaroundable from here. No headers, no
+bodies, no interception — that is a different, much bigger kind of tool.
 
 `key` presses a named key (`Enter`, `Escape`, `Tab`, `ArrowDown`, ...) or a
 single literal character for anything not in that list — useful to submit a

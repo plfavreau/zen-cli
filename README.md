@@ -39,6 +39,7 @@ zen-folders text <url|#> [css]       # read an element's text, or the page's
 zen-folders hover <url|#> <css>      # move the pointer over an element
 zen-folders key <url|#> <name>       # press a key: Enter, Escape, Tab, ArrowDown...
 zen-folders cookies <url|#>          # print cookies for the current page
+zen-folders network <url|#> [substring]  # print same-origin requests since load
 zen-folders scroll <url|#> <px|css>  # scroll by pixels, or an element into view
 zen-folders screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
 zen-folders destroy                  # remove the folder and its tabs
@@ -76,6 +77,16 @@ input. `key` takes a named key (`Enter`, `Escape`, `Tab`, `ArrowDown`, ...)
 or a single literal character for anything not in that list. `screenshot`
 takes an optional selector to capture just that element instead of the
 whole screen.
+
+`network` lists same-origin requests since the page loaded — url, type,
+duration, and the real HTTP status, including failures like a 404. There is
+no request interception, no headers or bodies: WebDriver classic (what Zen
+speaks) has no CDP-style network domain, so this reads the page's own
+`Resource Timing API` instead — a real browser capability, not a custom
+mechanism. Cross-origin requests report as `cross-origin` rather than a
+status, since `Timing-Allow-Origin` hides that detail from the page unless
+the server opts in; that is a real web platform restriction, not a gap in
+this tool.
 
 A `fill` in one command and a `click` in the next stay on the same page: a
 small background daemon (started on first use, alongside the browser) keeps
