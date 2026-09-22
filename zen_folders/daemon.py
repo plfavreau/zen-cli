@@ -43,6 +43,7 @@ _METHODS = (
     "hover",
     "key",
     "cookies",
+    "network",
     "screenshot",
     "scroll",
 )

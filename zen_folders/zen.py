@@ -178,6 +178,21 @@ _SCROLL_TO = """
 document.querySelector(arguments[0]).scrollIntoView({ block: "center" });
 """
 
+# Cross-origin entries report status 0 (opaque) unless the server opts in via
+# Timing-Allow-Origin - a real web platform restriction, not something a page
+# script can see around.
+_NETWORK = """
+const contains = arguments[0];
+return performance.getEntriesByType("resource")
+  .filter(e => !contains || e.name.includes(contains))
+  .map(e => ({
+    name: e.name,
+    type: e.initiatorType,
+    status: e.responseStatus,
+    duration: Math.round(e.duration),
+  }));
+"""
+
 
 class Zen:
     def __init__(self, driver: Marionette):
@@ -250,6 +265,10 @@ class Zen:
     def cookies(self, url: str) -> list[dict]:
         with self._content(url) as driver:
             return driver.get_cookies()
+
+    def network(self, url: str, contains: str | None) -> list[dict]:
+        with self._content(url) as driver:
+            return driver.execute_script(_NETWORK, script_args=[contains])
 
     def screenshot(self, url: str, selector: str | None = None) -> str:
         with self._content(url) as driver:

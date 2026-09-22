@@ -125,6 +125,18 @@ def _cookies(target: str) -> None:
         print(f"{cookie['name']}={cookie['value']}")
 
 
+def _network(target: str, contains: str | None) -> None:
+    record = state.get(worktree.root())
+    if not record:
+        return
+    with session() as zen:
+        url = zen.select(record["id"], _target(target))
+        entries = zen.network(url, contains)
+    for entry in entries:
+        status = entry["status"] if entry["status"] else "cross-origin"
+        print(f"{status}  {entry['duration']}ms  {entry['type']}  {entry['name']}")
+
+
 def _scroll(target: str, amount: str) -> None:
     record = state.get(worktree.root())
     if not record:
@@ -197,6 +209,11 @@ def main() -> int:
     keyer.add_argument("name", help="key name, or a single literal character")
     cookier = commands.add_parser("cookies", help="print cookies for the current page")
     cookier.add_argument("target", help="url or list index")
+    networker = commands.add_parser(
+        "network", help="print same-origin requests since the page loaded"
+    )
+    networker.add_argument("target", help="url or list index")
+    networker.add_argument("contains", nargs="?", help="only requests whose url contains this")
     scroller = commands.add_parser("scroll", help="scroll the page, or an element into view")
     scroller.add_argument("target", help="url or list index")
     scroller.add_argument("amount", help="pixels (negative scrolls up), or a css selector")
@@ -224,6 +241,7 @@ def main() -> int:
         "hover": lambda: _hover(args.target, args.selector),
         "key": lambda: _key(args.target, args.name),
         "cookies": lambda: _cookies(args.target),
+        "network": lambda: _network(args.target, args.contains),
         "scroll": lambda: _scroll(args.target, args.amount),
         "screenshot": lambda: _screenshot(args.target, args.path, args.selector),
         "destroy": _destroy,
