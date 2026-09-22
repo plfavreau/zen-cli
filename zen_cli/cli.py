@@ -182,7 +182,7 @@ def _seed(passwords: bool) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="zen-folders", description="One git worktree, one Zen folder."
+        prog="zen-cli", description="Drive a dedicated Zen folder per git worktree."
     )
     commands = parser.add_subparsers(dest="command", required=True)
 

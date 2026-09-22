@@ -1,9 +1,9 @@
 ---
-name: zen-folders
-description: Keep the pages behind a coding session in a Zen browser folder, so the human can see what you read and what you built. Use when a page is worth keeping - the PR you opened, the ticket you are implementing, documentation that drove a decision, a dashboard the human will want to check. Triggers on "open this in my browser", "put that in my Zen folder", "show me the docs you used", and on opening a PR.
+name: zen-cli
+description: Keep the pages behind a coding session in a Zen browser folder, and drive them - click, fill, scroll, read text, check a network request, screenshot what rendered. Use when a page is worth keeping (the PR you opened, the ticket you are implementing, documentation that drove a decision) or when you need to verify something in a real browser (does a fix actually render, did a login flow work, did that request succeed). Triggers on "open this in my browser", "put that in my Zen folder", "show me the docs you used", "check if this works in the browser", "click that for me", and on opening a PR.
 ---
 
-# zen-folders
+# zen-cli
 
 Every worktree gets one folder in the human's browser, named after the branch.
 You cannot name another one and there is no reason to ask which — there is only
@@ -12,19 +12,19 @@ yours.
 ## Commands
 
 ```bash
-zen-folders open <url>...              # open pages in this worktree's folder
-zen-folders list                       # what is in it
-zen-folders close <url|#>              # drop a tab, by url or by its number in list
-zen-folders click <url|#> <css|x,y>    # click an element, or exact viewport coordinates
-zen-folders fill <url|#> <css> <text>  # fill an input
-zen-folders text <url|#> [css]         # read an element's text, or the page's
-zen-folders hover <url|#> <css>        # move the pointer over an element
-zen-folders key <url|#> <name>         # press a key: Enter, Escape, Tab, ArrowDown...
-zen-folders cookies <url|#>            # print cookies for the current page
-zen-folders network <url|#> [substring]  # print same-origin requests since load
-zen-folders scroll <url|#> <px|css>    # scroll by pixels, or an element into view
-zen-folders screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
-zen-folders destroy                    # remove the folder and its tabs
+zen-cli open <url>...              # open pages in this worktree's folder
+zen-cli list                       # what is in it
+zen-cli close <url|#>              # drop a tab, by url or by its number in list
+zen-cli click <url|#> <css|x,y>    # click an element, or exact viewport coordinates
+zen-cli fill <url|#> <css> <text>  # fill an input
+zen-cli text <url|#> [css]         # read an element's text, or the page's
+zen-cli hover <url|#> <css>        # move the pointer over an element
+zen-cli key <url|#> <name>         # press a key: Enter, Escape, Tab, ArrowDown...
+zen-cli cookies <url|#>            # print cookies for the current page
+zen-cli network <url|#> [substring]  # print same-origin requests since load
+zen-cli scroll <url|#> <px|css>    # scroll by pixels, or an element into view
+zen-cli screenshot <url|#> <path> [css]  # screenshot the screen, or just one element
+zen-cli destroy                    # remove the folder and its tabs
 ```
 
 `open` is idempotent: a page already in the folder is not opened twice. Silence
@@ -83,6 +83,13 @@ whole screen.
 - Documentation that decided something — the page you would cite in review.
 - A failing CI run or a dashboard the human will want to look at.
 
+## When to drive a page
+
+- Confirming a fix actually renders, instead of trusting the diff.
+- Walking a login or checkout flow to see where it actually breaks.
+- Reading back the result of an action the human asked you to verify.
+- Checking whether a request a click triggered actually succeeded.
+
 ## When not to
 
 - Pages you fetched only to quote back.
@@ -95,7 +102,7 @@ A folder with four pages that matter is useful. One with forty is noise.
 
 Pages open in a second Zen running on its own profile, which starts empty. A
 page behind a login wall will show a sign-in screen, and that is expected. Do
-not try to log in. Mention that `zen-folders seed` copies the human's cookies
+not try to log in. Mention that `zen-cli seed` copies the human's cookies
 across, and that they have to run it themselves.
 
 ## Teardown
@@ -103,7 +110,7 @@ across, and that they have to run it themselves.
 When the work is finished and the worktree is going away:
 
 ```bash
-zen-folders destroy
+zen-cli destroy
 ```
 
 ## If it fails

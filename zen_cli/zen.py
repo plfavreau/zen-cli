@@ -62,7 +62,7 @@ def launch() -> None:
         raise ZenUnreachable(f"Zen not found at {ZEN}")
     if profile.ensure():
         print(
-            "started an empty agent browser; `zen-folders seed` copies your logins",
+            "started an empty agent browser; `zen-cli seed` copies your logins",
             file=sys.stderr,
         )
     process = subprocess.Popen(
@@ -109,7 +109,7 @@ const findFolder = id => gBrowser.getAllTabGroups().find(g => g.id === id) ?? nu
 const urlOf = t => {
   const live = t.linkedBrowser?.currentURI?.spec ?? "";
   if (live && live !== "about:blank") return live;
-  return t.getAttribute("zen-folders-url") || live;
+  return t.getAttribute("zen-cli-url") || live;
 };
 const realTabs = f => f.tabs.filter(t => !t.hasAttribute("zen-empty-tab"));
 """
@@ -124,7 +124,7 @@ const [folderId, label, urls] = arguments;
   const fresh = urls.filter(u => !present.has(norm(u)));
   const tabs = fresh.map(u => {
     const tab = gBrowser.addTab(u, { triggeringPrincipal: principal, skipAnimation: true });
-    tab.setAttribute("zen-folders-url", u);
+    tab.setAttribute("zen-cli-url", u);
     return tab;
   });
   if (!folder) {

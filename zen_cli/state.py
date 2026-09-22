@@ -5,7 +5,7 @@ import tomllib
 from contextlib import contextmanager
 from pathlib import Path
 
-HOME = Path(os.environ.get("ZEN_FOLDERS_HOME", Path.home() / ".zen-folders"))
+HOME = Path(os.environ.get("ZEN_CLI_HOME", Path.home() / ".zen-cli"))
 STATE = HOME / "state.json"
 CONFIG = HOME / "config.toml"
 LOCK = HOME / "lock"
@@ -14,7 +14,7 @@ DEFAULT_PORT = 2830
 
 
 def port() -> int:
-    if env := os.environ.get("ZEN_FOLDERS_PORT"):
+    if env := os.environ.get("ZEN_CLI_PORT"):
         return int(env)
     if CONFIG.exists():
         return int(tomllib.loads(CONFIG.read_text()).get("port", DEFAULT_PORT))

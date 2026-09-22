@@ -120,7 +120,7 @@ def _ensure_running() -> None:
             if _reachable():
                 return
             subprocess.Popen(
-                [sys.executable, "-m", "zen_folders.daemon"],
+                [sys.executable, "-m", "zen_cli.daemon"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,

@@ -94,7 +94,7 @@ def plan(passwords: bool) -> tuple[Path, list[str]]:
 
 def seed(passwords: bool = False) -> None:
     if not sys.stdin.isatty():
-        raise NoProfile("run `zen-folders seed` yourself; it copies personal data")
+        raise NoProfile("run `zen-cli seed` yourself; it copies personal data")
 
     src, names = plan(passwords)
     print(f"copy from {src}")
