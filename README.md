@@ -49,10 +49,14 @@ created.
 
 `click`/`fill`/`text`/`screenshot` drive the actual page, not just the tab —
 useful for an agent that needs to log a state, submit a form, or confirm a fix
-rendered. They run against a tab whether or not its window has real screen
-focus. State you set (a typed value, a clicked toggle) is reliable within one
-command chain; if you fill a field, submit it in the very next call rather
-than much later, since a long-backgrounded tab is not guaranteed to keep it.
+rendered. `open` brings the agent browser to the front of your other windows
+the moment it starts, because macOS stops rendering a window it can't see at
+all, and a page rendered at zero size is what `screenshot` would otherwise
+return. If you cover the agent browser with another window later, expect the
+same until you bring it forward again. State you set (a typed value, a
+clicked toggle) is reliable within one command chain; if you fill a field,
+submit it in the very next call rather than much later, since a
+long-backgrounded tab is not guaranteed to keep it.
 
 ## Teardown
 

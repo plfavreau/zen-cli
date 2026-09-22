@@ -32,6 +32,11 @@ in `list`. Do the fill and the click that depends on it back to back; a value
 you set is not guaranteed to still be there if you let a lot of time pass
 before the next command.
 
+`open` raises the browser window when it first starts, so a `screenshot` shows
+the page the way a person would actually see it. If the human covers it with
+another window later, screenshots go back to an unrendered fallback until it
+is brought forward again — not something you can fix from inside the page.
+
 ## When to open a page
 
 - The PR you just created.
